@@ -16,8 +16,14 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
+	int retval;
+	retval = system(cmd);
+	
+	if(retval < 0)
+		return false;
+	else
+		return true;
 
-    return true;
 }
 
 /**
@@ -40,6 +46,8 @@ bool do_exec(int count, ...)
     va_start(args, count);
     char * command[count+1];
     int i;
+	pid_t pid; /* PID of the child process*/
+	
     for(i=0; i<count; i++)
     {
         command[i] = va_arg(args, char *);
@@ -58,6 +66,15 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+	pid = fork();
+	if(pid == -1) /*fork not succefull*/
+	{
+		
+	}
+	else if(pid == 0) /*executed in child process*/
+	{
+		execv(command[0], &command[1]);
+	}
 
     va_end(args);
 
