@@ -25,7 +25,7 @@ bool do_system(const char *cmd)
 	int retval;
 	retval = system(cmd);
 	
-	if(retval < 0)
+	if(retval < 0) // if return value is negative, it is assumed to be failed.
 		return false;
 	else
 		return true;
@@ -79,15 +79,15 @@ bool do_exec(int count, ...)
 		return false;
 	else if(pid == 0) /*executed in child process*/
 	{
-		execv(command[0], command);
-		exit(-1);
+		execv(command[0], command);	
+		exit(-1); // this line can't execute if execv is successful there by indicating a failure so eit with status -1 which will be captured by the parent process
 	}
 	
-	if(waitpid(pid, &status, 0) == -1)
+	if(waitpid(pid, &status, 0) == -1) // executed by parent alone, if child returns with exit status -1
 		return false;
-	else if(WIFEXITED(status))
+	else if(WIFEXITED(status)) // this branch is executed only of execv is successful and the command within it is executed
 	{
-		if (WEXITSTATUS(status) != 0)
+		if (WEXITSTATUS(status) != 0) // if cmd within execv returned non 0 value
 			return false;
 		else 
 			return true;
@@ -146,20 +146,20 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 		if (dup2(fd, 1) < 0)
 		{
 			perror("dup2");
-			exit(-1);
+			exit(-1); // if dup2 is failed do not continue but exit with status -1
 		}
 		close(fd);
 		
 		execv(command[0], command);
 		perror("execv");
-		exit(-1);
+		exit(-1); // this line can't execute if execv is successful there by indicating a failure so eit with status -1 which will be captured by the parent process
 	}
 	
-	if(waitpid(pid, &status, 0) == -1)
+	if(waitpid(pid, &status, 0) == -1) // executed by parent alone, if child returns with exit status -1
 		return false;
-	else if(WIFEXITED(status))
+	else if(WIFEXITED(status)) // this branch is executed only of execv is successful and the command within it is executed
 	{
-		if (WEXITSTATUS(status) != 0)
+		if (WEXITSTATUS(status) != 0) // if cmd within execv returned non 0 value
 			return false;
 		else 
 			return true;
