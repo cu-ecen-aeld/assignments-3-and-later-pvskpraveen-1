@@ -1,4 +1,4 @@
-# Install script for directory: /home/praveen/Desktop/msee/course1_attempt2/aesd-assignments
+# Install script for directory: /home/praveen/Desktop/msee/course1/aesd-assignments
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -44,7 +44,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/praveen/Desktop/msee/course1_attempt2/aesd-assignments/assignment-autotest/cmake_install.cmake")
+  include("/home/praveen/Desktop/msee/course1/aesd-assignments/assignment-autotest/cmake_install.cmake")
 
 endif()
 
@@ -56,5 +56,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/praveen/Desktop/msee/course1_attempt2/aesd-assignments/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/praveen/Desktop/msee/course1/aesd-assignments/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

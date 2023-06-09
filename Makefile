@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/praveen/Desktop/msee/course1_attempt2/aesd-assignments
+CMAKE_SOURCE_DIR = /home/praveen/Desktop/msee/course1/aesd-assignments
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/praveen/Desktop/msee/course1_attempt2/aesd-assignments
+CMAKE_BINARY_DIR = /home/praveen/Desktop/msee/course1/aesd-assignments
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -132,9 +132,9 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/praveen/Desktop/msee/course1_attempt2/aesd-assignments/CMakeFiles /home/praveen/Desktop/msee/course1_attempt2/aesd-assignments//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/praveen/Desktop/msee/course1/aesd-assignments/CMakeFiles /home/praveen/Desktop/msee/course1/aesd-assignments//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/praveen/Desktop/msee/course1_attempt2/aesd-assignments/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/praveen/Desktop/msee/course1/aesd-assignments/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
