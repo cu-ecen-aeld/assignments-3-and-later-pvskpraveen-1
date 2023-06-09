@@ -1,3 +1,9 @@
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "systemcalls.h"
 
 /**
@@ -45,7 +51,7 @@ bool do_exec(int count, ...)
     va_list args;
     va_start(args, count);
     char * command[count+1];
-    int i;
+    int i, status;
 	pid_t pid; /* PID of the child process*/
 	
     for(i=0; i<count; i++)
@@ -65,20 +71,28 @@ bool do_exec(int count, ...)
  *   (first argument to execv), and use the remaining arguments
  *   as second argument to the execv() command.
  *
-*/
+*/	
+    va_end(args);
+	
 	pid = fork();
-	if(pid == -1) /*fork not succefull*/
-	{
-		
-	}
+	if (pid == -1) /*fork not succefull*/
+		return false;
 	else if(pid == 0) /*executed in child process*/
 	{
-		execv(command[0], &command[1]);
+		execv(command[0], command);
+		exit(-1);
 	}
-
-    va_end(args);
-
-    return true;
+	
+	if(waitpid(pid, &status, 0) == -1)
+		return false;
+	else if(WIFEXITED(status))
+	{
+		if (WEXITSTATUS(status) != 0)
+			return false;
+		else 
+			return true;
+	}
+	return false;
 }
 
 /**
@@ -91,7 +105,9 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     va_list args;
     va_start(args, count);
     char * command[count+1];
-    int i;
+    int i, status;
+	pid_t pid; /* PID of the child process*/
+	
     for(i=0; i<count; i++)
     {
         command[i] = va_arg(args, char *);
@@ -111,6 +127,44 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 */
 
     va_end(args);
+	
+	int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+	if (fd<0) 
+	{
+		perror("open"); 
+		return false;
+	}
+	
+	pid = fork();
+	if (pid == -1) /*fork not succefull*/
+	{
+		perror("fork");
+		return false;
+	}
+	else if(pid == 0) /*executed in child process*/
+	{
+		if (dup2(fd, 1) < 0)
+		{
+			perror("dup2");
+			exit(-1);
+		}
+		close(fd);
+		
+		execv(command[0], command);
+		perror("execv");
+		exit(-1);
+	}
+	
+	if(waitpid(pid, &status, 0) == -1)
+		return false;
+	else if(WIFEXITED(status))
+	{
+		if (WEXITSTATUS(status) != 0)
+			return false;
+		else 
+			return true;
+	}
+	return false;
 
     return true;
 }
