@@ -45,7 +45,7 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
 	make ARCH=arm64 CROSS_COMPILE=${CROSS_COMPILE} defconfig
 
 	#Build kernel image for booting with QMU
-	make -j4 ARCH=arm64 CROSS_COMPILE=${CROSS_COMPILE} all
+	make -j8 ARCH=arm64 CROSS_COMPILE=${CROSS_COMPILE} all
 
 	#build modules - excluding as per the instructions
 	#make ARCH=arm64 CROSS_COMPILE=${CROSS_COMPILE} modules
