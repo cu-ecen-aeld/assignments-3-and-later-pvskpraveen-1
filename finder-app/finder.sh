@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #accepts 2 arguments filesdir, searchstr
 #exits with error 1 if arguments are not correct
