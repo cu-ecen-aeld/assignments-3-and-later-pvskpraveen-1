@@ -4,6 +4,7 @@
 
 set -e
 set -u
+cd `dirname $0`
 
 NUMFILES=10
 WRITESTR=AELD_IS_FUN
@@ -66,7 +67,7 @@ set +e
 echo ${OUTPUTSTRING} | grep "${MATCHSTR}"
 if [ $? -eq 0 ]; then
 	echo "success"
-	echo ${OUTPUTSTRING} ${OUTPUTFILE}
+	echo ${OUTPUTSTRING} ${OUTPUTFILE}			#added for assignment4part2
 	exit 0
 else
 	echo "failed: expected  ${MATCHSTR} in ${OUTPUTSTRING} but instead found"
