@@ -67,7 +67,7 @@ set +e
 echo ${OUTPUTSTRING} | grep "${MATCHSTR}"
 if [ $? -eq 0 ]; then
 	echo "success"
-	echo ${OUTPUTSTRING} ${OUTPUTFILE}			#added for assignment4part2
+	echo ${OUTPUTSTRING} > ${OUTPUTFILE}			#added for assignment4part2
 	exit 0
 else
 	echo "failed: expected  ${MATCHSTR} in ${OUTPUTSTRING} but instead found"
