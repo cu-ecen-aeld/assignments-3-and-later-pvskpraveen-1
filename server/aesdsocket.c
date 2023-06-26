@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
 	struct sigaction new_action;
 	pid_t procid;
 	char *sockbuf;
-	sockbuf = (char *)malloc(BUFLEN* sizeof(char));
+	sockbuf = (char *)calloc(BUFLEN+1, sizeof(char));
 	
 	char ipstr[INET_ADDRSTRLEN];
 	
@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
 		while (datalen > 0)
 		{
 				if (datalen == BUFLEN && recbuf[datalen-1] != '\n') {
-					sockbuf = realloc(sockbuf, (strlen(sockbuf)+BUFLEN)*sizeof(char));
+					sockbuf = realloc(sockbuf, (strlen(sockbuf)+BUFLEN)*sizeof(char) + 1);
 					datalen = recv(listen_fd, recbuf, datalen, 0);
 					strncat(sockbuf, recbuf, datalen);
 				}
