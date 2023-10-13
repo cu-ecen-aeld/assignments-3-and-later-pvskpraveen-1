@@ -36,8 +36,6 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
 	uint8_t curloc; // curloc is used to reevaluate i to the location based on where the out_offs is currently located
 	size_t total_size = 0;  // accumulator to find the offset as requested by the caller
 	
-	PDEBUG("Reading Entry at %d %d\n", buffer->in_offs, buffer->out_offs);
-	
 	// loops for max AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED iterations
 	for (i=0; i<AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED;i++) {
 		
@@ -82,7 +80,6 @@ const char *aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, 
     * TODO: implement per description
     */
 	const char * retval=NULL;
-	PDEBUG("Adding Entry at %d %d\n", buffer->in_offs, buffer->out_offs);
 	
 	// Increment out_offs only if buffer is full and addition is performed.
 	if (buffer->full)	{
