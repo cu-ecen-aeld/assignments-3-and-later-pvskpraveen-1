@@ -24,7 +24,16 @@
 
 #define PORT "9000"
 #define BACKLOG 10
-#define RECFILE "/var/tmp/aesdsocketdata"
+
+#define USE_AESD_CHAR_DEVICE 1
+
+
+#if USE_AESD_CHAR_DEVICE
+	#define RECFILE "/dev/aesdchar"
+#else
+	#define RECFILE "/var/tmp/aesdsocketdata"
+#endif
+
 #define BUFLEN 512
 #define TIMESTAMPLEN 32
 
@@ -37,10 +46,12 @@ static void signal_handler(int signal_number)	{
 	process_killed = true;
 }
 
+#if (USE_AESD_CHAR_DEVICE==0)
 static void timer_handler(int signal_number)	{
 	syslog(LOG_INFO, "Timer expired");
 	timer_elapsed = true;
 }
+#endif
 
 typedef struct slist_data_s {
 	pthread_t *threadp;
@@ -54,6 +65,7 @@ struct threadparam_t {
 	bool thread_complete_success;
 };
 
+#if (USE_AESD_CHAR_DEVICE==0)
 void timer_function(pthread_mutex_t * mutexp) {
 	int recfile_fd;
 	time_t curtime;
@@ -85,6 +97,7 @@ void timer_function(pthread_mutex_t * mutexp) {
 	
 	free(timestamp);
 }
+#endif
 
 /*Thread handler for writing to file*/
  void *socket_handler(void *threadparamp)	{
@@ -187,16 +200,20 @@ int main(int argc, char* argv[])	 {
 	/*Signal*/
 	memset(&kill_action, 0, sizeof(struct sigaction));
 	kill_action.sa_handler=signal_handler;
+	#if (USE_AESD_CHAR_DEVICE==0)
 	memset(&alrm_action, 0, sizeof(struct sigaction));
 	alrm_action.sa_handler=timer_handler;
+	#endif
 	
 	if(0!=sigaction(SIGTERM, &kill_action, NULL))
 		perror("error registering for SIGTERM\n");
 	if(0!=sigaction(SIGINT, &kill_action, NULL))
 		perror("error registering for SIGINT\n");
+	
+	#if (USE_AESD_CHAR_DEVICE==0)
 	if(0!=sigaction(SIGALRM, &alrm_action, NULL))
 		perror("error registering for SIGALRM\n");
-	
+	#endif
 		
 	/*Socket initialization*/
 	memset(&hints, 0, sizeof hints);
@@ -276,7 +293,8 @@ int main(int argc, char* argv[])	 {
 	pthread_mutex_destroy(&mutex);
 	if(listen_fd != -1) close(listen_fd);
 	if(socket_fd != -1) close(socket_fd);	// closes socket and frees up resources associated with the socket
+	#if (USE_AESD_CHAR_DEVICE==0)
 	remove(RECFILE);
-			
+	#endif
 	return 0;
 }

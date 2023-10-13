@@ -36,6 +36,8 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
 	uint8_t curloc; // curloc is used to reevaluate i to the location based on where the out_offs is currently located
 	size_t total_size = 0;  // accumulator to find the offset as requested by the caller
 	
+	PDEBUG("Reading Entry at %d %d\n", buffer->in_offs, buffer->out_offs);
+	
 	// loops for max AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED iterations
 	for (i=0; i<AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED;i++) {
 		
@@ -71,12 +73,27 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
 * new start location.
 * Any necessary locking must be handled by the caller
 * Any memory referenced in @param add_entry must be allocated by and/or must have a lifetime managed by the caller.
+* @return NULL or, if an existing entry at out_offs was replaced,
+*			 the value of buffptr for the entry which was replaced (for use with dynamic memory allocation/free)
 */
-void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const struct aesd_buffer_entry *add_entry)
+const char *aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const struct aesd_buffer_entry *add_entry)
 {
     /**
     * TODO: implement per description
     */
+	const char * retval=NULL;
+	PDEBUG("Adding Entry at %d %d\n", buffer->in_offs, buffer->out_offs);
+	
+	// Increment out_offs only if buffer is full and addition is performed.
+	if (buffer->full)	{
+		retval = buffer->entry[buffer->out_offs].buffptr;
+		if (buffer->out_offs < AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED-1)
+			buffer->out_offs++;
+		else
+			buffer->out_offs = 0;
+	}
+	else
+		retval = NULL;
 	// Add the entry to the current location of in_offs
 	buffer->entry[buffer->in_offs] = *add_entry;
 	
@@ -87,18 +104,14 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
 	else
 		buffer->in_offs++;
 	
-	// Increment out_offs only if buffer is full and addition is performed.
-	if (buffer->full)	{
-		if (buffer->out_offs < AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED)
-			buffer->out_offs++;
-		else
-			buffer->out_offs = 0;
-	}			
+		
 	
 	// checking for buffer full only done at the end to prevent out_offs incrementing as soon as buffer is full
 	if (buffer->in_offs == buffer->out_offs)	{
 		buffer->full = true;
 	}
+	
+	return retval;
 }
 
 /**
