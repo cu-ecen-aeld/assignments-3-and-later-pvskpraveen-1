@@ -18,7 +18,10 @@
 #include <linux/cdev.h>
 #include <linux/fs.h> // file_operations
 #include <linux/slab.h>
+
 #include "aesdchar.h"
+#include "aesd_ioctl.h"
+
 int aesd_major =   0; // use dynamic major
 int aesd_minor =   0;
 
@@ -99,6 +102,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     ssize_t retval = -ENOMEM;
 	ssize_t notcopied;
     struct aesd_dev * devptr;
+	const char * rem_ent=NULL;
 	//struct aesd_buffer_entry entry;
     PDEBUG("write %zu bytes with offset %lld",count,*f_pos);
 	/**
@@ -130,7 +134,13 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 	devptr->entry.size += retval;//(count - notcopied);
 		
 	if (strchr((char *)(devptr->entry.buffptr), '\n'))	{
-		kfree(aesd_circular_buffer_add_entry(&devptr->buffer,&devptr->entry));
+		devptr->size += devptr->entry.size;
+		
+		rem_ent = aesd_circular_buffer_add_entry(&devptr->buffer,&devptr->entry);
+		if (rem_ent != NULL) {
+			devptr->size -= sizeof(rem_ent);
+		}
+		kfree(rem_ent);
 		devptr->entry.buffptr = NULL;
 		devptr->entry.size = 0;
 	}
@@ -141,12 +151,71 @@ out:
 	
     return retval;
 }
+
+
+loff_t aesd_llseek(struct file * filp, loff_t off, int whence)
+{
+	struct aesd_dev * devptr;
+	devptr = filp->private_data;
+	
+	//for(i=1; i<AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED; i++){
+	//	size += strlen(aesd_device.buffer[i]);
+	//}
+	
+	if(!mutex_lock_interruptible(&devptr->cdevmtx))	{
+		fixed_size_llseek(filp, off, whence, devptr->size);
+		PDEBUG("llseek with %d on %d size file", off, devptr->size);
+	}
+	mutex_unlock(&devptr->cdevmtx);
+	
+	return 0;
+}
+
+long aesd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	uint32_t i, offset=0;
+	ssize_t entry_offset;
+	struct aesd_seekto seekto;
+	struct aesd_dev * devptr;
+	struct aesd_buffer_entry *buff_data;
+	
+	devptr = filp->private_data;
+	
+	switch(cmd)
+	{
+		case AESDCHAR_IOCSEEKTO:
+			PDEBUG("IOCTL and inside command");
+			copy_from_user(&seekto, (const void *)arg, sizeof(seekto));
+			
+			for(i=0; i<seekto.write_cmd; i++)	{
+				
+				buff_data = aesd_circular_buffer_find_entry_offset_for_fpos(&devptr->buffer, offset+1, &entry_offset);
+				if (buff_data == NULL)
+					break;
+				offset += buff_data->size;	
+			}
+			
+			offset += seekto.write_cmd_offset;
+			aesd_llseek(filp, offset, SEEK_SET);
+			PDEBUG("IOCTL and inside command, %d, %d, %d", seekto.write_cmd, seekto.write_cmd_offset, offset);
+			break;
+		
+		default:
+			PDEBUG("IOCTL and in default case");
+			return -ENOTTY;
+	}
+	
+	return 0;
+}
+
 struct file_operations aesd_fops = {
     .owner =    THIS_MODULE,
     .read =     aesd_read,
     .write =    aesd_write,
     .open =     aesd_open,
     .release =  aesd_release,
+	.llseek = aesd_llseek,
+	.unlocked_ioctl = aesd_ioctl,
 };
 
 static int aesd_setup_cdev(struct aesd_dev *dev)

@@ -19,7 +19,7 @@
 #include <stdbool.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-
+#include "../aesd-char-driver/aesd_ioctl.h"
 #include "queue.h"
 
 #define PORT "9000"
@@ -83,7 +83,7 @@ void timer_function(pthread_mutex_t * mutexp) {
 			pthread_mutex_lock(mutexp);
 			recfile_fd = open(RECFILE, O_CREAT | O_RDWR | O_APPEND, S_IRWXU | S_IRWXG | S_IRWXO);
 			if (recfile_fd == -1) {
-				perror("Error: ");
+				perror("2Error: ");
 				return;
 			}
 			write(recfile_fd, timestamp, strlen(timestamp));
@@ -105,6 +105,7 @@ void timer_function(pthread_mutex_t * mutexp) {
 		char filebuf[BUFLEN], recbuf[BUFLEN];
 		char *sockbuf;
 		int recfile_fd;
+		struct aesd_seekto seekto; //assignment9
 		struct threadparam_t* thread_func_args = (struct threadparam_t *) threadparamp;
 		thread_func_args->thread_complete_success = false;
 		
@@ -121,7 +122,7 @@ void timer_function(pthread_mutex_t * mutexp) {
 		
 		recfile_fd = open(RECFILE, O_CREAT | O_RDWR | O_APPEND, S_IRWXU | S_IRWXG | S_IRWXO);
 		if (recfile_fd == -1) {
-			perror("Error: ");
+			perror("1Error: ");
 			return (void *) thread_func_args;
 		}
 	
@@ -138,14 +139,29 @@ void timer_function(pthread_mutex_t * mutexp) {
 					break;
 		}
 		syslog(LOG_INFO, "%s", sockbuf);
-		write(recfile_fd, sockbuf, strlen(sockbuf));
-		close(recfile_fd);
-		
-		recfile_fd = open(RECFILE, O_RDONLY);
-		if (recfile_fd == -1) {
-			perror("Error: ");
-			return (void *) thread_func_args;
+		//assignment-9 content
+		if(strncmp(sockbuf, "AESDCHAR_IOCSEEKTO:", 19) == 0)	{
+			seekto.write_cmd = (int)sockbuf[19] - 48;
+			seekto.write_cmd_offset = (int)sockbuf[21] - 48;
+			
+			ioctl(recfile_fd, AESDCHAR_IOCSEEKTO, &seekto);
+			syslog(LOG_INFO, "ioctl command issued with %d, %d", seekto.write_cmd, seekto.write_cmd_offset);
+			//read(recfile_fd, filebuf, BUFLEN);
+			//syslog(LOG_INFO, "return after ioctl: %s", filebuf);
 		}
+		else	{
+			write(recfile_fd, sockbuf, strlen(sockbuf));
+			fsync(recfile_fd);
+		}
+		
+		//close(recfile_fd);
+		//fsync(recfile_fd);
+		
+		//recfile_fd = open(RECFILE, O_RDONLY);
+		//if (recfile_fd == -1) {
+		//	perror("Error: ");
+		//	return (void *) thread_func_args;
+		//}
 		
 		while (1) {
 			datalen = read(recfile_fd, filebuf, BUFLEN);
@@ -173,7 +189,9 @@ int main(int argc, char* argv[])	 {
 	struct sockaddr_storage their_addr;
 	int addrlen = sizeof(struct sockaddr_storage);
 	struct sigaction kill_action;
+	#if (USE_AESD_CHAR_DEVICE==0)
 	struct sigaction alrm_action;
+	#endif
 	struct addrinfo *res;
 	int socket_fd;
 	pid_t procid;
@@ -247,10 +265,12 @@ int main(int argc, char* argv[])	 {
 			return 0;	//parent process ends to set the Child process to be a daemon
 		}
 	}
-	if(fork())	{
+	#if (USE_AESD_CHAR_DEVICE==0)
+		if(fork())	{
 		timer_function(&mutex);
 		return 0;
 	}
+	#endif
 		
 	listen(socket_fd, BACKLOG);
 	printf("waiting\n");
